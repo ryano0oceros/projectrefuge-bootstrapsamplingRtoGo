@@ -2,28 +2,33 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 )
 
 // Function to perform bootstrap sampling
-func bootstrapSampling(data []float64, nBootstrap int) []float64 {
+func bootstrapSampling(data []float64, nBootstrap int) ([]float64, time.Duration) {
+	start := time.Now()
 	sampleMeans := make([]float64, nBootstrap)
 	var wg sync.WaitGroup
+	wg.Add(nBootstrap)
 	for i := 0; i < nBootstrap; i++ {
-		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			sample := make([]float64, len(data))
 			for j := range sample {
-				sample[j] = data[rand.Intn(len(data))]
+				sample[j] = data[r.Intn(len(data))]
 			}
 			sampleMeans[i] = median(sample)
 		}(i)
 	}
 	wg.Wait()
-	return sampleMeans
+	elapsed := time.Since(start)
+	return sampleMeans, elapsed
 }
 
 // Function to calculate median
@@ -56,14 +61,15 @@ func sqrt(value float64) float64 {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	data := generateDistributions()
 	nBootstrap := 10000
+	fmt.Println("Standard Error of the Median for n_bootstrap= ", nBootstrap, ":")
 
 	for _, dist := range data {
-		bootstrapResults := bootstrapSampling(dist.values, nBootstrap)
+		bootstrapResults, elapsedTime := bootstrapSampling(dist.values, nBootstrap)
 		se := standardError(bootstrapResults)
 		fmt.Printf("Distribution: %s, Standard Error of the Median: %f\n", dist.name, se)
+		fmt.Printf("Time taken for bootstrap sampling: %v\n", elapsedTime)
 	}
 }
 
@@ -95,7 +101,7 @@ func generatePositivelySkewed(size int) []float64 {
 func generateSymmetric(size int) []float64 {
 	dist := make([]float64, size)
 	for i := range dist {
-		dist[i] = rand.NormFloat64() * 10 + 50
+		dist[i] = rand.NormFloat64()*10 + 50
 	}
 	return dist
 }
