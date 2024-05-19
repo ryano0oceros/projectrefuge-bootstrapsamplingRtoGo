@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -10,7 +11,14 @@ import (
 )
 
 // Function to perform bootstrap sampling
-func bootstrapSampling(data []float64, nBootstrap int) ([]float64, time.Duration) {
+func bootstrapSampling(data []float64, nBootstrap int) ([]float64, time.Duration, error) {
+	if len(data) == 0 {
+		return nil, 0, errors.New("bootstrapSampling: data must not be empty")
+	}
+	if nBootstrap < 1 {
+		return nil, 0, errors.New("bootstrapSampling: nBootstrap must be at least 1")
+	}
+
 	start := time.Now()
 	sampleMeans := make([]float64, nBootstrap)
 	var wg sync.WaitGroup
@@ -28,7 +36,7 @@ func bootstrapSampling(data []float64, nBootstrap int) ([]float64, time.Duration
 	}
 	wg.Wait()
 	elapsed := time.Since(start)
-	return sampleMeans, elapsed
+	return sampleMeans, elapsed, nil
 }
 
 // Function to calculate median
@@ -61,16 +69,26 @@ func sqrt(value float64) float64 {
 }
 
 func main() {
+	start := time.Now()
+
 	data := generateDistributions()
-	nBootstrap := 10000
+	nBootstrap := 100000
 	fmt.Println("Standard Error of the Median for n_bootstrap= ", nBootstrap, ":")
 
 	for _, dist := range data {
-		bootstrapResults, elapsedTime := bootstrapSampling(dist.values, nBootstrap)
+		bootstrapResults, elapsedTime, err := bootstrapSampling(dist.values, nBootstrap)
+		if err != nil {
+			fmt.Println("Error during bootstrap sampling:", err)
+			continue
+		}
 		se := standardError(bootstrapResults)
 		fmt.Printf("Distribution: %s, Standard Error of the Median: %f\n", dist.name, se)
 		fmt.Printf("Time taken for bootstrap sampling: %v\n", elapsedTime)
 	}
+
+	end := time.Now()
+	totalTime := end.Sub(start)
+	fmt.Printf("Total execution time: %v\n", totalTime)
 }
 
 // Distribution struct

@@ -2,8 +2,8 @@
 
 ## Setup Details
 
-- **R Version**: 4.0.2
-- **Go Version**: go1.15.6
+- **R Version**: 4.4.0 (2024-04-24) -- "Puppy Cup"
+- **Go Version**: go1.22.1 darwin/arm64
 - **Machine Specifications**: Intel Core i7, 16GB RAM, SSD
 - **Dataset Size**: 1000 observations per distribution
 - **Number of Bootstrap Samples**: 10,000
